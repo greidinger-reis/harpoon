@@ -102,6 +102,16 @@ local action_state = require("telescope.actions.state")
 local harpoon = require('harpoon')
 harpoon:setup({})
 
+-- used to get the correct index of a mark in the telescope list
+local function list_indexOf(list, predicate)
+    for i, v in ipairs(list) do
+        if predicate(v) then
+            return i
+        end
+    end
+    return -1
+end
+
 local function generate_new_finder(harpoon_files)
     local files = {}
     for i, item in ipairs(harpoon_files.items) do
@@ -194,9 +204,15 @@ local function toggle_telescope(harpoon_files)
             -- Change the keybinding to your liking
             map({ 'n', 'i' }, '<C-d>', function(prompt_bufnr)
                 local curr_picker = action_state.get_current_picker(prompt_bufnr)
-
                 curr_picker:delete_selection(function(selection)
-                    harpoon:list():removeAt(selection.index)
+                    local mark_idx = list_indexOf(harpoon_files.items, function(v)
+                        return v.value == selection[1]
+                    end)
+                    if mark_idx == -1 then
+                        return
+                    end
+
+                    harpoon:list():removeAt(mark_idx)
                 end)
             end)
             -- Move entries up and down with <C-j> and <C-k>
